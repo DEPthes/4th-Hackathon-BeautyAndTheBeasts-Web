@@ -1,8 +1,13 @@
-export const Footer = () => {
-  return (
+import { cn } from "../utils/classname"
 
+interface FooterProp {
+  className?: string
+}
+
+export const Footer: React.FC<FooterProp> = ({ className }) => {
+  return (
     <>
-      <div className="bg-black flex items-center h-40 w-4/5 m-auto">
+      <div className={cn("flex items-center h-40 w-4/5 m-auto", className)}>
         <div className="relative border-white h-16">
           <div className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-white"></div>
           <p className="font-[DungGeunMo] text-[#D8D8D8] text-[1.25rem] pl-4 leading-5">18:28</p>

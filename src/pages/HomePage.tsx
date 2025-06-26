@@ -2,7 +2,7 @@ import { Layout } from "../components/Layout";
 
 export const HomePage = () => {
   return (
-    <Layout className="flex flex-col p-4 gap-2">
+    <Layout className="">
       <div className="text-2xl font-bold">오늘 하루 입력하기</div>
       <input
         type="text"
