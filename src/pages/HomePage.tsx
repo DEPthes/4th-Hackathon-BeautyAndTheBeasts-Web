@@ -1,14 +1,23 @@
+import Files from "../components/Files";
 import { Layout } from "../components/Layout";
+import StartButton from "../components/StartButton";
+import { useNavigate } from "react-router-dom";
 
-export const HomePage = () => {
+const HomePage: React.FC = () => {
+  const navigate = useNavigate();
   return (
-    <Layout className="flex flex-col p-4 gap-2">
-      <div className="text-2xl font-bold">오늘 하루 입력하기</div>
-      <input
-        type="text"
-        className="w-full p-2 border border-gray-300 rounded-md placeholder:text-gray-400"
-        placeholder="오늘 하루 입력하기"
+    <Layout className="flex flex-col items-center justify-start gap-10">
+      <div className="text-3xl font-bold text-white pt-15">
+        네, 그게 <span className="text-red-500">칭찬</span>입니다.
+      </div>
+      <Files />
+      <StartButton
+        onClick={() => {
+          navigate("/input");
+        }}
       />
     </Layout>
   );
 };
+
+export default HomePage;
