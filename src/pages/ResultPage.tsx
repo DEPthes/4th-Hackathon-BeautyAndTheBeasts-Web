@@ -5,7 +5,7 @@ import LoadingBar from "../components/LoadingBar";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   regenerateGeminiResponse,
-  convertTextToSpeechOpenAI,
+  convertTextToSpeech,
   getResultByUuid,
   type GeminiResponse,
 } from "../utils/api";
@@ -84,10 +84,7 @@ const ResultPage: React.FC = () => {
       }
 
       // TTS 재생성 (기본 남자 음성 사용)
-      const audioBlob = await convertTextToSpeechOpenAI(
-        data.gptResponse,
-        "onyx"
-      );
+      const audioBlob = await convertTextToSpeech(data.gptResponse);
 
       // 결과 데이터 설정
       const newResultData = {
@@ -124,8 +121,8 @@ const ResultPage: React.FC = () => {
 
       // 남자/여자 음성을 병렬로 생성
       const [maleBlob, femaleBlob] = await Promise.all([
-        convertTextToSpeechOpenAI(text, "onyx"), // 남자 음성
-        convertTextToSpeechOpenAI(text, "nova"), // 여자 음성
+        convertTextToSpeech(text), // 남자 음성
+        convertTextToSpeech(text), // 여자 음성
       ]);
 
       setAudioCache({
@@ -154,11 +151,7 @@ const ResultPage: React.FC = () => {
 
       if (!currentVoiceBlob) {
         // 캐시에 없으면 실시간 생성
-        const selectedVoice = voiceGender === "male" ? "onyx" : "nova";
-        const newAudioBlob = await convertTextToSpeechOpenAI(
-          resultData.response,
-          selectedVoice
-        );
+        const newAudioBlob = await convertTextToSpeech(resultData.response);
 
         // 캐시 업데이트
         setAudioCache((prev) => ({
@@ -283,9 +276,8 @@ const ResultPage: React.FC = () => {
       if (import.meta.env.DEV) {
         console.log("🎤 새로운 응답으로 TTS 생성 중...");
       }
-      const newAudioBlob = await convertTextToSpeechOpenAI(
-        regeneratedData.gptResponse,
-        "onyx" // 기본 남자 음성 사용
+      const newAudioBlob = await convertTextToSpeech(
+        regeneratedData.gptResponse
       );
 
       if (import.meta.env.DEV) {

@@ -49,17 +49,14 @@ const InputPage: React.FC = () => {
         console.log("✅ Gemini 응답 받음:", geminiResponse.gptResponse);
       }
 
-      // OpenAI TTS 변환
+      // TTS 변환
       if (import.meta.env.DEV) {
-        console.log("🎤 OpenAI TTS 변환 시작...");
+        console.log("🎤 TTS 변환 시작...");
       }
-      const { convertTextToSpeechOpenAI } = await import("../utils/api");
-      const blob = await convertTextToSpeechOpenAI(
-        geminiResponse.gptResponse,
-        "nova"
-      );
+      const { convertTextToSpeech } = await import("../utils/api");
+      const blob = await convertTextToSpeech(geminiResponse.gptResponse);
       if (import.meta.env.DEV) {
-        console.log("✅ OpenAI TTS 생성 완료");
+        console.log("✅ TTS 생성 완료");
       }
 
       // 결과 페이지로 이동
