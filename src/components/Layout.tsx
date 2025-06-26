@@ -1,13 +1,14 @@
 import { cn } from "../utils/classname";
 import BackGroundImage from "./BackGroundImage";
+import { Footer } from "./Footer";
 import { Header } from "./Header";
 
 interface LayoutProps {
   children: React.ReactNode;
-  className?: string;
+  extraclassName?: string;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, extraclassName }) => {
   return (
     <div className="relative min-h-screen w-full">
       {/* 전체 화면 배경 */}
@@ -18,6 +19,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
         <Header />
         <main className={cn("flex-1", className)}>{children}</main>
       </div>
+    <div className="flex flex-col h-screen bg-gray-100 mx-auto max-w-[500px]">
+      <Header className={extraclassName} />
+      <main className="flex-1">{children}</main>
+      <Footer className={extraclassName} />
     </div>
   );
 };

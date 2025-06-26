@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import InputPage from "./pages/InputPage";
-import HomePage from "./pages/HomePage";
+import { HomePage } from "./pages/HomePage";
+import { ErrorPage } from "./pages/ErrorPage";
+import { InputPage } from "./pages/InputPage";
 
 export const Router = () => {
   return (
@@ -8,6 +9,7 @@ export const Router = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/input" element={<InputPage />} />
+        <Route path="/error" element={<ErrorPage />} />
       </Routes>
     </BrowserRouter>
   );
