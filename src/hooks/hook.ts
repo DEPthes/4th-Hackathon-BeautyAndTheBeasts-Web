@@ -70,7 +70,7 @@ export const useGeminiWithTTS = () => {
 
   const processTextAndPlay = async (
     text: string,
-    voiceOptions: TTSOptions = {}
+    voiceOptions: Partial<TTSOptions> = {}
   ): Promise<void> => {
     console.log("🎵 음성 처리 및 재생 시작:", {
       text: text.substring(0, 30),
@@ -79,7 +79,12 @@ export const useGeminiWithTTS = () => {
 
     try {
       // TTS로 음성 생성
-      const audioBlob = await convertTextToSpeech(text, voiceOptions);
+      const audioBlob = await convertTextToSpeech(text, {
+        voice: "default",
+        language: "ko",
+        speed: 1.0,
+        ...voiceOptions,
+      });
 
       // 오디오 URL 생성
       const audioUrl = URL.createObjectURL(audioBlob);

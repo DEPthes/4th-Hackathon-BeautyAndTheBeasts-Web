@@ -203,7 +203,7 @@ export function downloadAudio(
 // 기존 함수와의 호환성을 위한 래퍼 함수
 export const convertTextToSpeech = async (
   text: string,
-  options?: TTSOptions // eslint-disable-line @typescript-eslint/no-unused-vars
+  _options?: TTSOptions // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<Blob> => {
   // OpenAI TTS로 리다이렉트 (nova 목소리 사용)
   // options는 현재 OpenAI TTS에서 사용하지 않지만 호환성을 위해 유지
