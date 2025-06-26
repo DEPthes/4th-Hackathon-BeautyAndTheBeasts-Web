@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
-import { callGeminiAPI, type TTSOptions } from "../utils/api";
+import { callGeminiAPI } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import InputImage from "../assets/images/InputImage.png";
 import SubmitButton from "../assets/images/SubmitButton.png";
@@ -9,39 +9,6 @@ const InputPage: React.FC = () => {
   const navigate = useNavigate();
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState("");
-  const [audioBlob, setAudioBlob] = useState<Blob | undefined>(undefined);
-
-  // 유병재 목소리 고정 설정 (자연스러운 남성 목소리 유지)
-  const voiceSettings: TTSOptions = {
-    voice: "유병재",
-    language: "ko",
-    speed: 1.0,
-    emotion: {
-      happiness: 0.6, // 0.8 → 0.6 (과도한 행복감 조절)
-      surprise: 0.2, // 0.3 → 0.2 (과도한 놀라움 조절)
-      other: 0.2, // 기타 감정 조금 증가
-    },
-    pitch_std: 25.0, // 45.0 → 25.0 (남성 목소리 유지)
-    speaking_rate: 17.0, // 16.0 → 17.0 (자연스러운 속도)
-  };
-
-  // 음성 처리 및 재생 함수 (로컬 구현)
-  const processTextAndPlay = async (text: string, options: TTSOptions) => {
-    const { convertTextToSpeech } = await import("../utils/api");
-    const audioBlob = await convertTextToSpeech(text, options);
-
-    // 오디오 URL 생성 및 재생
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-
-    audio.addEventListener("ended", () => {
-      URL.revokeObjectURL(audioUrl);
-    });
-
-    await audio.play();
-    return audioBlob;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +18,7 @@ const InputPage: React.FC = () => {
     }
 
     console.log("📝 제출된 텍스트:", inputText);
-    console.log("🎭 유병재 목소리로 변환 예정");
+    console.log("🤖 OpenAI TTS로 변환 예정");
     setIsLoading(true);
 
     try {
@@ -59,16 +26,24 @@ const InputPage: React.FC = () => {
       console.log("🤖 Gemini API 호출 중...");
       const geminiResponse = await callGeminiAPI(inputText);
       console.log("✅ Gemini 응답 받음:", geminiResponse.gptResponse);
-      setResponse(geminiResponse.gptResponse);
 
-      // TTS 변환 및 재생 (유병재 목소리)
-      console.log("🎤 유병재 목소리로 TTS 변환 및 재생 시작...");
-      const blob = await processTextAndPlay(
+      // OpenAI TTS 변환
+      console.log("🎤 OpenAI TTS 변환 시작...");
+      const { convertTextToSpeechOpenAI } = await import("../utils/api");
+      const blob = await convertTextToSpeechOpenAI(
         geminiResponse.gptResponse,
-        voiceSettings
+        "onyx"
       );
-      setAudioBlob(blob);
-      console.log("✅ 모든 처리 완료");
+      console.log("✅ OpenAI TTS 생성 완료");
+
+      // 결과 페이지로 이동
+      navigate("/result", {
+        state: {
+          inputText: inputText,
+          response: geminiResponse.gptResponse,
+          audioBlob: blob,
+        },
+      });
     } catch (error) {
       console.error("❌ 처리 중 오류:", error);
       alert(
@@ -78,30 +53,6 @@ const InputPage: React.FC = () => {
       );
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handlePlayAudio = async () => {
-    if (!audioBlob) {
-      alert("재생할 음성이 없습니다!");
-      return;
-    }
-
-    try {
-      console.log("🔄 기존 생성된 유병재 음성을 재생합니다...");
-      // 기존에 생성된 audioBlob을 재생 (새로 생성하지 않음)
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-
-      audio.addEventListener("ended", () => {
-        URL.revokeObjectURL(audioUrl);
-      });
-
-      await audio.play();
-      console.log("✅ 음성 재생 완료");
-    } catch (error) {
-      console.error("❌ 음성 재생 실패:", error);
-      alert("음성 재생에 실패했습니다.");
     }
   };
 
@@ -169,7 +120,7 @@ const InputPage: React.FC = () => {
 
         {/* 로딩 상태일 때 오버레이 */}
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
+          <div className="absolute inset-0 flex items-center justify-center rounded">
             <div className="flex items-center gap-2 text-white font-[DungGeunMo] text-sm">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               착즙 중...
@@ -177,34 +128,6 @@ const InputPage: React.FC = () => {
           </div>
         )}
       </button>
-
-      {/* AI 응답 표시 */}
-      {response && (
-        <div className="mt-8 max-w-md w-full p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
-          <h3 className="text-lg font-bold mb-4 text-gray-800 text-center flex items-center justify-center gap-2">
-            🎭 유병재의 칭찬 메시지
-          </h3>
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-orange-200">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-center text-sm">
-              {response}
-            </p>
-          </div>
-
-          {/* 재생 버튼 */}
-          {audioBlob && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handlePlayAudio}
-                disabled={isLoading}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-md transform hover:scale-105"
-              >
-                <span className="text-base">🎵</span>
-                다시 듣기
-              </button>
-            </div>
-          )}
-        </div>
-      )}
     </Layout>
   );
 };
