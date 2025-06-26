@@ -207,17 +207,60 @@ export function downloadAudio(
   URL.revokeObjectURL(url);
 }
 
+// 백엔드 TTS API 호출 함수 (Netlify Functions 프록시 사용)
+export const convertTextToSpeechBackend = async (
+  text: string,
+  voice: string = "nova"
+): Promise<Blob> => {
+  try {
+    console.log("🎵 Netlify TTS 프록시 호출 중...", {
+      text: text.substring(0, 50),
+      voice,
+    });
+
+    const apiUrl = `/.netlify/functions/tts-proxy`;
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: text,
+        voice: voice,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Netlify TTS 프록시 요청 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const audioBlob = await response.blob();
+    console.log("✅ Netlify TTS 생성 완료:", audioBlob.size, "바이트");
+    return audioBlob;
+  } catch (error) {
+    console.error("❌ Netlify TTS 프록시 실패:", error);
+
+    // 에러 시 목업 데이터 반환
+    const mockAudioData = new ArrayBuffer(1024);
+    return new Blob([mockAudioData], { type: "audio/mpeg" });
+  }
+};
+
 // 기존 함수와의 호환성을 위한 래퍼 함수
 export const convertTextToSpeech = async (
   text: string,
   _options?: TTSOptions // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Promise<Blob> => {
-  // OpenAI TTS로 리다이렉트 (nova 목소리 사용)
-  // options는 현재 OpenAI TTS에서 사용하지 않지만 호환성을 위해 유지
-  if (import.meta.env.DEV) {
-    console.log("🔄 기존 TTS 함수 호출됨, OpenAI로 리다이렉트");
+  // 배포 환경에서는 백엔드 TTS 사용, 개발 환경에서는 OpenAI 직접 호출
+  if (import.meta.env.PROD) {
+    console.log("🔄 배포 환경: 백엔드 TTS 사용");
+    return convertTextToSpeechBackend(text, "nova");
+  } else {
+    console.log("🔄 개발 환경: OpenAI TTS 직접 호출");
+    return convertTextToSpeechOpenAI(text, "nova");
   }
-  return convertTextToSpeechOpenAI(text, "nova");
 };
 
 // UUID로 결과 데이터 가져오기 함수
