@@ -3,10 +3,7 @@ import ErrorPage from "./pages/ErrorPage";
 import HomePage from "./pages/HomePage";
 import InputPage from "./pages/InputPage";
 import ResultPage from "./pages/ResultPage";
-import { HomePage } from "./pages/HomePage";
-import { InputPage } from "./pages/InputPage";
 import { Loading } from "./components/Loading";
-import { ResultPage } from "./pages/ResultPage";
 
 export const Router = () => {
   return (
