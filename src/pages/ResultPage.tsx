@@ -124,16 +124,6 @@ const ResultPage: React.FC = () => {
             🏠 홈으로
           </button>
         </div>
-        <div className="flex flex-col mx-auto w-5/5">
-          <img src={DummyImg} className="w-2/5 mx-auto mt-5 z-10" />
-          <img src={Background} className="w-9/10 mx-auto -mt-6" />
-          <img src={DownLoad} className="bg-black w-5" />
-          <img src={WhitePlay} className="bg-black w-5" />
-        </div>
-        <div className="flex flex-row mx-auto w-9/10 mt-10">
-          <div className="mx-auto"><img src={ResultBtn} className=" h-20" /><p className="font-[DungGeunMo] text-red-500 text-4xl mr-3 -mt-15 ml-6">결과 공유하기</p></div>
-          <img src={RecBtn} className="mx-auto h-20" />
-        </div>
       </div>
     </Layout>
   );
