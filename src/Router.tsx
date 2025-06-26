@@ -3,6 +3,10 @@ import ErrorPage from "./pages/ErrorPage";
 import HomePage from "./pages/HomePage";
 import InputPage from "./pages/InputPage";
 import ResultPage from "./pages/ResultPage";
+import { HomePage } from "./pages/HomePage";
+import { InputPage } from "./pages/InputPage";
+import { Loading } from "./components/Loading";
+import { ResultPage } from "./pages/ResultPage";
 
 export const Router = () => {
   return (
@@ -12,6 +16,8 @@ export const Router = () => {
         <Route path="/input" element={<InputPage />} />
         <Route path="/result" element={<ResultPage />} />
         <Route path="/error" element={<ErrorPage />} />
+        <Route path="/loading" element={<Loading />} />
+        <Route path="/result" element={<ResultPage />} />
       </Routes>
     </BrowserRouter>
   );
