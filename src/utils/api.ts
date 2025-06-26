@@ -7,6 +7,11 @@ export interface GeminiResponse {
   createdAt: string;
 }
 
+// API 베이스 URL 설정
+const API_BASE_URL = import.meta.env.PROD
+  ? "https://paykids.shop" // 프로덕션 환경
+  : ""; // 개발 환경 (프록시 사용)
+
 // Gemini API 호출 함수 (실제 API 사용)
 export async function callGeminiAPI(prompt: string): Promise<GeminiResponse> {
   try {
@@ -14,13 +19,15 @@ export async function callGeminiAPI(prompt: string): Promise<GeminiResponse> {
       prompt: prompt,
     };
 
+    const apiUrl = `${API_BASE_URL}/api/gemini`;
+
     if (import.meta.env.DEV) {
       console.log("🤖 실제 Gemini API 호출 중...");
-      console.log("📤 요청 URL:", "/api/gemini");
+      console.log("📤 요청 URL:", apiUrl);
       console.log("📤 요청 데이터:", requestData);
     }
 
-    const response = await fetch("/api/gemini", {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -220,7 +227,8 @@ export async function getResultByUuid(uuid: string): Promise<GeminiResponse> {
       console.log("🔍 UUID로 결과 데이터 가져오기 중...", uuid);
     }
 
-    const response = await fetch(`/api/gemini/${uuid}`, {
+    const apiUrl = `${API_BASE_URL}/api/gemini/${uuid}`;
+    const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -256,7 +264,8 @@ export async function regenerateGeminiResponse(
       console.log("🔄 재생성 API 호출 중...", uuid);
     }
 
-    const response = await fetch(`/api/gemini/${uuid}/regenerate`, {
+    const apiUrl = `${API_BASE_URL}/api/gemini/${uuid}/regenerate`;
+    const response = await fetch(apiUrl, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
