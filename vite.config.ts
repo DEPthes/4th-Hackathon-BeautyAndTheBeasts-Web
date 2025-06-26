@@ -25,7 +25,6 @@ export default defineConfig({
         target: "https://paykids.shop", // 실제 백엔드 서버 주소
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

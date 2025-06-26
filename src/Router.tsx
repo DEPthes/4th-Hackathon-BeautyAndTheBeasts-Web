@@ -1,21 +1,21 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import ErrorPage from "./pages/ErrorPage";
+import React from "react";
+import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import InputPage from "./pages/InputPage";
+import LoadingPage from "./pages/LoadingPage";
 import ResultPage from "./pages/ResultPage";
-import { Loading } from "./components/Loading";
+import ErrorPage from "./pages/ErrorPage";
 
-export const Router = () => {
+const Router: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/input" element={<InputPage />} />
-        <Route path="/result" element={<ResultPage />} />
-        <Route path="/error" element={<ErrorPage />} />
-        <Route path="/loading" element={<Loading />} />
-        <Route path="/result" element={<ResultPage />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/input" element={<InputPage />} />
+      <Route path="/loading" element={<LoadingPage />} />
+      <Route path="/result" element={<ResultPage />} />
+      <Route path="/error" element={<ErrorPage />} />
+    </Routes>
   );
 };
+
+export default Router;

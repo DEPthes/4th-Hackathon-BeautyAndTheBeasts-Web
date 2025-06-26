@@ -1,14 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { callGeminiAPI } from "../utils/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import InputImage from "../assets/images/InputImage.png";
 import SubmitButton from "../assets/images/SubmitButton.png";
 
+interface InputPageState {
+  previousText?: string;
+  retry?: boolean;
+}
+
 const InputPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // 이전 텍스트 복원 (에러 후 다시 시도할 때)
+  useEffect(() => {
+    const stateData = location.state as InputPageState;
+    if (stateData?.previousText) {
+      setInputText(stateData.previousText);
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,40 +31,87 @@ const InputPage: React.FC = () => {
       return;
     }
 
-    console.log("📝 제출된 텍스트:", inputText);
-    console.log("🤖 OpenAI TTS로 변환 예정");
+    if (import.meta.env.DEV) {
+      console.log("📝 제출된 텍스트:", inputText);
+    }
     setIsLoading(true);
+
+    // 로딩 페이지로 이동
+    navigate("/loading");
 
     try {
       // Gemini API 호출
-      console.log("🤖 Gemini API 호출 중...");
+      if (import.meta.env.DEV) {
+        console.log("🤖 Gemini API 호출 중...");
+      }
       const geminiResponse = await callGeminiAPI(inputText);
-      console.log("✅ Gemini 응답 받음:", geminiResponse.gptResponse);
+      if (import.meta.env.DEV) {
+        console.log("✅ Gemini 응답 받음:", geminiResponse.gptResponse);
+      }
 
       // OpenAI TTS 변환
-      console.log("🎤 OpenAI TTS 변환 시작...");
+      if (import.meta.env.DEV) {
+        console.log("🎤 OpenAI TTS 변환 시작...");
+      }
       const { convertTextToSpeechOpenAI } = await import("../utils/api");
       const blob = await convertTextToSpeechOpenAI(
         geminiResponse.gptResponse,
-        "onyx"
+        "nova"
       );
-      console.log("✅ OpenAI TTS 생성 완료");
+      if (import.meta.env.DEV) {
+        console.log("✅ OpenAI TTS 생성 완료");
+      }
 
       // 결과 페이지로 이동
       navigate("/result", {
         state: {
+          uuid: geminiResponse.uuid,
           inputText: inputText,
           response: geminiResponse.gptResponse,
           audioBlob: blob,
+          imageUrl: geminiResponse.imageUrl,
         },
+        replace: true, // 로딩 페이지를 히스토리에서 제거
       });
     } catch (error) {
-      console.error("❌ 처리 중 오류:", error);
-      alert(
-        `오류가 발생했습니다: ${
-          error instanceof Error ? error.message : "알 수 없는 오류"
-        }`
-      );
+      if (import.meta.env.DEV) {
+        console.error("❌ 처리 중 오류:", error);
+      }
+
+      // 에러 타입 분석
+      let errorType: "api" | "network" | "tts" | "unknown" = "unknown";
+      let errorMessage = "";
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+
+        if (
+          errorMessage.includes("Gemini API") ||
+          errorMessage.includes("fetch")
+        ) {
+          errorType = "api";
+        } else if (
+          errorMessage.includes("NetworkError") ||
+          errorMessage.includes("Failed to fetch")
+        ) {
+          errorType = "network";
+        } else if (
+          errorMessage.includes("OpenAI") ||
+          errorMessage.includes("TTS")
+        ) {
+          errorType = "tts";
+        }
+      }
+
+      // 에러 페이지로 이동
+      navigate("/error", {
+        state: {
+          errorType,
+          errorMessage,
+          inputText: inputText,
+        },
+        replace: true, // 로딩 페이지를 히스토리에서 제거
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +164,7 @@ const InputPage: React.FC = () => {
           </form>
         </div>
       </div>
+
       <button
         type="submit"
         disabled={isLoading || !inputText.trim()}
@@ -120,14 +182,25 @@ const InputPage: React.FC = () => {
 
         {/* 로딩 상태일 때 오버레이 */}
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center rounded">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
             <div className="flex items-center gap-2 text-white font-[DungGeunMo] text-sm">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              착즙 중...
+              착즙 시작...
             </div>
           </div>
         )}
       </button>
+
+      {/* 다시 시도 안내 (retry 상태일 때) */}
+      {location.state && (location.state as InputPageState).retry && (
+        <div className="mt-4 max-w-md w-full px-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+            <p className="text-yellow-800 text-sm font-medium">
+              🔄 이전 내용이 복원되었습니다. 다시 시도해보세요!
+            </p>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

@@ -10,30 +10,56 @@ export interface GeminiResponse {
 // Gemini API 호출 함수 (실제 API 사용)
 export async function callGeminiAPI(prompt: string): Promise<GeminiResponse> {
   try {
-    console.log("🤖 실제 Gemini API 호출 중...", prompt);
+    const requestData = {
+      prompt: prompt,
+    };
+
+    if (import.meta.env.DEV) {
+      console.log("🤖 실제 Gemini API 호출 중...");
+      console.log("📤 요청 URL:", "/api/gemini");
+      console.log("📤 요청 데이터:", requestData);
+    }
 
     const response = await fetch("/api/gemini", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        prompt: prompt,
-      }),
+      body: JSON.stringify(requestData),
     });
 
+    if (import.meta.env.DEV) {
+      console.log("📥 응답 상태:", response.status, response.statusText);
+    }
+
     if (!response.ok) {
+      // 에러 응답의 내용을 읽어서 더 자세한 정보 제공
+      let errorDetails = "";
+      try {
+        const errorText = await response.text();
+        errorDetails = errorText ? ` - ${errorText}` : "";
+        if (import.meta.env.DEV) {
+          console.log("❌ 에러 응답 내용:", errorText);
+        }
+      } catch {
+        // 에러 텍스트를 읽을 수 없는 경우 무시
+      }
+
       throw new Error(
-        `Gemini API 요청 실패: ${response.status} ${response.statusText}`
+        `Gemini API 요청 실패: ${response.status} ${response.statusText}${errorDetails}`
       );
     }
 
     const data: GeminiResponse = await response.json();
-    console.log("✅ Gemini API 응답 받음:", data);
+    if (import.meta.env.DEV) {
+      console.log("✅ Gemini API 응답 받음:", data);
+    }
 
     return data;
   } catch (error) {
-    console.error("❌ Gemini API 호출 실패:", error);
+    if (import.meta.env.DEV) {
+      console.error("❌ Gemini API 호출 실패:", error);
+    }
 
     // 에러 발생 시 목업 응답 제공
     return {
@@ -65,13 +91,17 @@ export const convertTextToSpeechOpenAI = async (
   text: string,
   voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "onyx"
 ): Promise<Blob> => {
-  console.log("🤖 OpenAI TTS 요청 중...");
-  console.log("📝 텍스트:", text);
+  if (import.meta.env.DEV) {
+    console.log("🤖 OpenAI TTS 요청 중...");
+    console.log("📝 텍스트:", text);
+  }
 
   const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
   if (!openaiApiKey || openaiApiKey === "your_openai_api_key_here") {
-    console.log("⚠️ OpenAI API 키가 설정되지 않음, 목업 데이터 사용");
+    if (import.meta.env.DEV) {
+      console.log("⚠️ OpenAI API 키가 설정되지 않음, 목업 데이터 사용");
+    }
     // 목업 오디오 데이터 반환
     const mockAudioData = new ArrayBuffer(1024);
     return new Blob([mockAudioData], { type: "audio/mpeg" });
@@ -100,10 +130,14 @@ export const convertTextToSpeechOpenAI = async (
     }
 
     const audioBlob = await response.blob();
-    console.log("✅ OpenAI TTS 생성 완료:", audioBlob.size, "바이트");
+    if (import.meta.env.DEV) {
+      console.log("✅ OpenAI TTS 생성 완료:", audioBlob.size, "바이트");
+    }
     return audioBlob;
   } catch (error) {
-    console.error("❌ OpenAI TTS 실패:", error);
+    if (import.meta.env.DEV) {
+      console.error("❌ OpenAI TTS 실패:", error);
+    }
 
     // 에러 시 목업 데이터 반환
     const mockAudioData = new ArrayBuffer(1024);
@@ -173,6 +207,78 @@ export const convertTextToSpeech = async (
 ): Promise<Blob> => {
   // OpenAI TTS로 리다이렉트 (nova 목소리 사용)
   // options는 현재 OpenAI TTS에서 사용하지 않지만 호환성을 위해 유지
-  console.log("🔄 기존 TTS 함수 호출됨, OpenAI로 리다이렉트");
+  if (import.meta.env.DEV) {
+    console.log("🔄 기존 TTS 함수 호출됨, OpenAI로 리다이렉트");
+  }
   return convertTextToSpeechOpenAI(text, "nova");
 };
+
+// UUID로 결과 데이터 가져오기 함수
+export async function getResultByUuid(uuid: string): Promise<GeminiResponse> {
+  try {
+    if (import.meta.env.DEV) {
+      console.log("🔍 UUID로 결과 데이터 가져오기 중...", uuid);
+    }
+
+    const response = await fetch(`/api/gemini/${uuid}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `결과 데이터 요청 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data: GeminiResponse = await response.json();
+    if (import.meta.env.DEV) {
+      console.log("✅ UUID 결과 데이터 받음:", data);
+    }
+
+    return data;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("❌ UUID 결과 데이터 가져오기 실패:", error);
+    }
+    throw error;
+  }
+}
+
+// 재생성 API 호출 함수
+export async function regenerateGeminiResponse(
+  uuid: string
+): Promise<GeminiResponse> {
+  try {
+    if (import.meta.env.DEV) {
+      console.log("🔄 재생성 API 호출 중...", uuid);
+    }
+
+    const response = await fetch(`/api/gemini/${uuid}/regenerate`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `재생성 API 요청 실패: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data: GeminiResponse = await response.json();
+    if (import.meta.env.DEV) {
+      console.log("✅ 재생성 API 응답 받음:", data);
+    }
+
+    return data;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("❌ 재생성 API 호출 실패:", error);
+    }
+    throw error;
+  }
+}
