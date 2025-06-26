@@ -1,14 +1,34 @@
+import Files from "../components/Files";
 import { Layout } from "../components/Layout";
+import StartButton from "../components/StartButton";
+import { useNavigate } from "react-router-dom";
 
-export const HomePage = () => {
+const HomePage: React.FC = () => {
+  const navigate = useNavigate();
   return (
-    <Layout extraclassName="">
-      <div className="text-2xl font-bold">오늘 하루 입력하기</div>
-      <input
-        type="text"
-        className="w-full p-2 border border-gray-300 rounded-md placeholder:text-gray-400"
-        placeholder="오늘 하루 입력하기"
+    <Layout
+      className="flex flex-col items-center justify-start gap-10"
+      isHomePage={true}
+    >
+      <div>
+        <div className="mx-auto">
+          <span className="font-[DungGeunMo] text-white text-3xl">
+            네, 그게
+          </span>
+          <span className="font-[DungGeunMo] text-red-500 text-3xl"> 칭찬</span>
+          <span className="font-[DungGeunMo] text-white text-3xl">
+            입니다.ㅣ
+          </span>
+        </div>
+      </div>
+      <Files />
+      <StartButton
+        onClick={() => {
+          navigate("/input");
+        }}
       />
     </Layout>
   );
 };
+
+export default HomePage;
