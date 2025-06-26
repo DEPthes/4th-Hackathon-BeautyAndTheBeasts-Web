@@ -7,7 +7,7 @@ import Play from "../assets/images/Play.svg";
 
 export const ErrorPage = () => {
   return (
-    <Layout className="hidden">
+    <Layout extraclassName="hidden">
       <div className="flex flex-col justify-center items-center h-5/5">
         <img src={ErrorLogo} className=" w-4/5" />
         <div className="relative w-4/5 mt-20">

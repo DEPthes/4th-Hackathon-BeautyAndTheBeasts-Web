@@ -3,15 +3,15 @@ import { Header } from "./Header";
 
 interface LayoutProps {
   children: React.ReactNode;
-  className?: string;
+  extraclassName?: string;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, className }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, extraclassName }) => {
   return (
     <div className="flex flex-col h-screen bg-gray-100 mx-auto max-w-[500px]">
-      <Header className={className} />
+      <Header className={extraclassName} />
       <main className="flex-1">{children}</main>
-      <Footer className={className} />
+      <Footer className={extraclassName} />
     </div>
   );
 };
