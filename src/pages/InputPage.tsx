@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { Layout } from "../components/Layout";
 import { callGeminiAPI, type TTSOptions } from "../utils/api";
+import { useNavigate } from "react-router-dom";
+import InputImage from "../assets/images/InputImage.png";
+import SubmitButton from "../assets/images/SubmitButton.png";
 
 const InputPage: React.FC = () => {
+  const navigate = useNavigate();
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState("");
@@ -42,7 +46,7 @@ const InputPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) {
-      alert("텍스트를 입력해주세요!");
+      alert("칭찬거리를 입력해주세요!");
       return;
     }
 
@@ -102,116 +106,105 @@ const InputPage: React.FC = () => {
   };
 
   return (
-    <Layout className="flex flex-col p-4 gap-4">
-      {/* 메인 콘텐츠 래퍼 - 반투명 배경 추가 */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-lg">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🎭 AI 일기 분석 & 유병재 목소리 변환
-          </h1>
-          <p className="text-gray-600">
-            오늘 하루를 입력하면 AI가 분석하고 유병재님 목소리로 들려드려요!
-          </p>
+    <Layout
+      className="flex flex-col items-center justify-start min-h-screen"
+      showFooter={false}
+      onBackClick={() => navigate(-1)}
+    >
+      {/* SVG 이미지와 입력 폼을 담는 컨테이너 */}
+      <div className="relative w-full">
+        <img
+          src={InputImage}
+          alt="Input Interface"
+          className="w-full pr-6 h-auto"
+        />
+
+        {/* SVG 위에 오버레이되는 입력 폼 */}
+        <div className="absolute top-9 left-12 flex flex-col items-center justify-start pt-5">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full flex flex-col items-center"
+          >
+            {/* 텍스트 입력 영역 - SVG 내부 영역에 맞춤 */}
+            <div className="w-full mt-4 px-1 relative">
+              <textarea
+                value={inputText}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  if (text.length <= 100) {
+                    setInputText(text);
+                  }
+                }}
+                className="w-full h-80 p-3 border-0 bg-transparent text-white placeholder:text-gray-200 placeholder:font-[DungGeunMo] font-[DungGeunMo] resize-none text-xl leading-relaxed focus:outline-none"
+                placeholder="칭찬거리 적어달라. |"
+                disabled={isLoading}
+                maxLength={100}
+                style={{
+                  fontFamily:
+                    "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+                }}
+              />
+              {/* 글자수 카운터 */}
+              <div className="absolute bottom-5 right-3 text-xl text-gray-300 font-[DungGeunMo]">
+                {inputText.length}/100
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <button
+        type="submit"
+        disabled={isLoading || !inputText.trim()}
+        className="mt-3 relative transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={handleSubmit}
+      >
+        <img src={SubmitButton} alt="칭찬 착즙하기" className="w-full" />
+
+        {/* 버튼 텍스트 오버레이 */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-red-500 font-[DungGeunMo] text-4xl">
+            칭찬 착즙하기
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              📝 오늘 하루 일기 작성
-            </label>
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              className="w-full p-4 border border-gray-300 rounded-xl placeholder:text-gray-400 resize-none h-40 bg-white/95 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="오늘 하루 어떤 일이 있었는지 자유롭게 써보세요...&#10;예: 오늘은 친구와 맛있는 음식을 먹었어요. 정말 즐거운 하루였습니다!"
-              disabled={isLoading}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || !inputText.trim()}
-            className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-lg transform hover:scale-[1.02]"
-          >
-            {isLoading ? (
-              <>
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                🎭 유병재 목소리로 변환 중...
-              </>
-            ) : (
-              <>
-                <span className="text-xl">🎭</span>
-                AI 분석 & 유병재 목소리로 듣기
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* AI 응답 표시 */}
-        {response && (
-          <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200 shadow-sm">
-            <h3 className="text-lg font-semibold mb-3 text-gray-800 flex items-center gap-2">
-              🤖 AI 분석 결과
-              <span className="text-sm font-normal text-gray-600">
-                (유병재 목소리로 재생됨)
-              </span>
-            </h3>
-            <div className="bg-white/80 rounded-lg p-4 border border-white/50">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {response}
-              </p>
+        {/* 로딩 상태일 때 오버레이 */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
+            <div className="flex items-center gap-2 text-white font-[DungGeunMo] text-sm">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              착즙 중...
             </div>
-
-            {/* 재생 버튼만 표시 (다운로드 제거) */}
-            {audioBlob && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={handlePlayAudio}
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-md transform hover:scale-105"
-                >
-                  <span className="text-lg">🎵</span>
-                  다시 재생하기
-                </button>
-              </div>
-            )}
           </div>
         )}
-      </div>
+      </button>
 
-      {/* 안내 섹션들도 반투명 배경 적용 */}
-      <div className="bg-purple-50/90 backdrop-blur-sm border border-purple-200 rounded-xl p-4 shadow-sm">
-        <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
-          🎭 유병재 목소리 TTS 서비스
-        </h4>
-        <ol className="text-sm text-purple-700 space-y-1">
-          <li>1. 오늘 하루 있었던 일을 자유롭게 작성해주세요</li>
-          <li>2. AI가 당신의 일기를 따뜻하게 분석해드립니다</li>
-          <li>3. 분석 결과를 유병재님의 목소리로 자동 재생합니다</li>
-          <li>4. 다시 듣고 싶으면 "다시 재생하기" 버튼을 누르세요</li>
-        </ol>
-      </div>
+      {/* AI 응답 표시 */}
+      {response && (
+        <div className="mt-8 max-w-md w-full p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50">
+          <h3 className="text-lg font-bold mb-4 text-gray-800 text-center flex items-center justify-center gap-2">
+            🎭 유병재의 칭찬 메시지
+          </h3>
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border border-orange-200">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-center text-sm">
+              {response}
+            </p>
+          </div>
 
-      <div className="bg-green-50/90 backdrop-blur-sm border border-green-200 rounded-xl p-4 shadow-sm">
-        <p className="text-sm text-green-700 flex items-center gap-2">
-          <span className="text-lg">✅</span>
-          <span>
-            <span className="font-semibold">유병재 음성 적용됨:</span>
-            실제 유병재님의 음성 샘플(극한의 넌센스 공작소.mp3)을 사용하여
-            고품질 음성 복제가 적용되었습니다.
-          </span>
-        </p>
-      </div>
-
-      <div className="bg-yellow-50/90 backdrop-blur-sm border border-yellow-200 rounded-xl p-3 shadow-sm">
-        <p className="text-sm text-yellow-700 flex items-center gap-2">
-          <span className="text-lg">⚙️</span>
-          <span>
-            <span className="font-semibold">서버 상태:</span>
-            Zonos TTS 서버가 localhost:8000에서 실행 중이어야 합니다.
-          </span>
-        </p>
-      </div>
+          {/* 재생 버튼 */}
+          {audioBlob && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handlePlayAudio}
+                disabled={isLoading}
+                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-md transform hover:scale-105"
+              >
+                <span className="text-base">🎵</span>
+                다시 듣기
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </Layout>
   );
 };

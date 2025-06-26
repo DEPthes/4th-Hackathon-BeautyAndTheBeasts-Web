@@ -11,7 +11,7 @@ const Files = ({ className }: FilesProps) => {
         <div className="w-fit h-full object-contain relative">
           <img src={FileImage} alt="Files" />
           <div className="bg-stone-900 h-[170px] w-[270px] absolute top-35 left-10 opacity-40"></div>
-          <div className="text-white text-xl font-bold absolute top-43 left-18">
+          <div className="text-white text-xl font-[DungGeunMo] font-bold absolute top-43 left-18">
             무엇이든 칭찬으로
             <br />
             바꿔드립니다...?

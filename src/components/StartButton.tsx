@@ -20,8 +20,8 @@ const StartButton = ({ className, onClick }: StartButtonProps) => {
       tabIndex={0}
     >
       <img src={StartButtonSvg} alt="StartButton" />
-      <span className="absolute top-6 pr-5 flex items-center justify-center text-red-500 font-bold text-4xl">
-        <RiPlayFill />
+      <span className="absolute top-1.5 pr-10 flex items-center justify-center font-[DungGeunMo] text-red-500 font-bold text-[50px]">
+        <RiPlayFill className="text-[35px]" />
         <span className="ml-3">START</span>
       </span>
     </div>
