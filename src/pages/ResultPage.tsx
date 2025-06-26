@@ -7,6 +7,7 @@ import {
   regenerateGeminiResponse,
   convertTextToSpeechOpenAI,
   getResultByUuid,
+  type GeminiResponse,
 } from "../utils/api";
 import ResultBackground from "../assets/images/ResultBackground.png";
 import SubmitButton from "../assets/images/Share.png";
@@ -23,6 +24,11 @@ interface ResultPageState {
   imageUrl?: string;
 }
 
+interface AudioCache {
+  male: Blob | null;
+  female: Blob | null;
+}
+
 const ResultPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +38,12 @@ const ResultPage: React.FC = () => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [resultData, setResultData] = useState<ResultPageState | null>(null);
+  const [voiceGender, setVoiceGender] = useState<"male" | "female">("male"); // 기본값: 남자 음성
+  const [audioCache, setAudioCache] = useState<AudioCache>({
+    male: null,
+    female: null,
+  });
+  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // URL 상태에서 데이터 가져오기 또는 URL 파라미터에서 UUID 읽기
@@ -44,6 +56,9 @@ const ResultPage: React.FC = () => {
       // 상태에서 데이터가 있으면 사용
       setResultData(stateData);
       setIsRegenerating(false);
+
+      // 음성 캐시 생성
+      generateVoiceCache(stateData.response);
     } else if (uuidFromUrl) {
       // URL 파라미터에서 UUID가 있으면 서버에서 데이터 로드
       loadResultFromUuid(uuidFromUrl);
@@ -68,20 +83,25 @@ const ResultPage: React.FC = () => {
         console.log("✅ UUID 데이터 로드 완료:", data);
       }
 
-      // TTS 재생성 (서버에서 오디오는 저장하지 않으므로)
+      // TTS 재생성 (기본 남자 음성 사용)
       const audioBlob = await convertTextToSpeechOpenAI(
         data.gptResponse,
-        "nova"
+        "onyx"
       );
 
       // 결과 데이터 설정
-      setResultData({
+      const newResultData = {
         uuid: data.uuid,
         inputText: data.prompt,
         response: data.gptResponse,
         audioBlob: audioBlob,
         imageUrl: data.imageUrl || "",
-      });
+      };
+
+      setResultData(newResultData);
+
+      // 음성 캐시 생성
+      await generateVoiceCache(data.gptResponse);
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error("❌ UUID 데이터 로드 실패:", error);
@@ -93,15 +113,77 @@ const ResultPage: React.FC = () => {
     }
   };
 
+  // 음성 캐시 생성 함수
+  const generateVoiceCache = async (text: string) => {
+    try {
+      setIsGeneratingVoice(true);
+
+      if (import.meta.env.DEV) {
+        console.log("🎤 남자/여자 음성 동시 생성 시작...");
+      }
+
+      // 남자/여자 음성을 병렬로 생성
+      const [maleBlob, femaleBlob] = await Promise.all([
+        convertTextToSpeechOpenAI(text, "onyx"), // 남자 음성
+        convertTextToSpeechOpenAI(text, "nova"), // 여자 음성
+      ]);
+
+      setAudioCache({
+        male: maleBlob,
+        female: femaleBlob,
+      });
+
+      if (import.meta.env.DEV) {
+        console.log("✅ 남자/여자 음성 캐시 생성 완료");
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("❌ 음성 캐시 생성 실패:", error);
+      }
+    } finally {
+      setIsGeneratingVoice(false);
+    }
+  };
+
   const handlePlayPause = async () => {
-    if (!resultData?.audioBlob) return;
+    if (!resultData?.response) return;
 
     try {
-      if (!audioRef.current) {
-        // 오디오 객체 생성
-        const audioUrl = URL.createObjectURL(resultData.audioBlob);
-        audioRef.current = new Audio(audioUrl);
+      // 현재 선택된 성별의 음성이 캐시에 없으면 생성
+      const currentVoiceBlob = audioCache[voiceGender];
 
+      if (!currentVoiceBlob) {
+        // 캐시에 없으면 실시간 생성
+        const selectedVoice = voiceGender === "male" ? "onyx" : "nova";
+        const newAudioBlob = await convertTextToSpeechOpenAI(
+          resultData.response,
+          selectedVoice
+        );
+
+        // 캐시 업데이트
+        setAudioCache((prev) => ({
+          ...prev,
+          [voiceGender]: newAudioBlob,
+        }));
+
+        // 오디오 객체 생성
+        const audioUrl = URL.createObjectURL(newAudioBlob);
+        audioRef.current = new Audio(audioUrl);
+      } else if (
+        !audioRef.current ||
+        audioRef.current.src !== URL.createObjectURL(currentVoiceBlob)
+      ) {
+        // 캐시된 음성으로 새 오디오 객체 생성
+        const audioUrl = URL.createObjectURL(currentVoiceBlob);
+        if (audioRef.current) {
+          audioRef.current.pause();
+          URL.revokeObjectURL(audioRef.current.src);
+        }
+        audioRef.current = new Audio(audioUrl);
+      }
+
+      // 오디오 이벤트 리스너 설정
+      if (audioRef.current && !audioRef.current.onended) {
         audioRef.current.onended = () => {
           setIsPlaying(false);
           setIsPaused(false);
@@ -137,8 +219,41 @@ const ResultPage: React.FC = () => {
     }
   };
 
+  const handleVoiceGenderToggle = () => {
+    // 재생 중이면 정지
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
+
+    // 음성 성별 토글
+    setVoiceGender((prev) => (prev === "male" ? "female" : "male"));
+  };
+
   const handleRetry = () => {
     setIsModalOpen(true);
+  };
+
+  // 재생성 완료 후 캐시 업데이트
+  const updateResultDataAndCache = async (
+    newData: GeminiResponse,
+    newAudioBlob: Blob
+  ) => {
+    const updatedResultData = {
+      uuid: newData.uuid,
+      inputText: newData.prompt,
+      response: newData.gptResponse,
+      audioBlob: newAudioBlob,
+      imageUrl: newData.imageUrl,
+    };
+
+    setResultData(updatedResultData);
+
+    // 음성 캐시 업데이트
+    await generateVoiceCache(newData.gptResponse);
+
+    return updatedResultData;
   };
 
   const handleConfirmRetry = async () => {
@@ -170,7 +285,7 @@ const ResultPage: React.FC = () => {
       }
       const newAudioBlob = await convertTextToSpeechOpenAI(
         regeneratedData.gptResponse,
-        "nova"
+        "onyx" // 기본 남자 음성 사용
       );
 
       if (import.meta.env.DEV) {
@@ -180,15 +295,15 @@ const ResultPage: React.FC = () => {
       // 로딩 상태 해제
       setIsRegenerating(false);
 
+      // 결과 데이터 업데이트 및 캐시 생성
+      const updatedData = await updateResultDataAndCache(
+        regeneratedData,
+        newAudioBlob
+      );
+
       // 현재 페이지를 새로운 데이터로 업데이트
       navigate("/result", {
-        state: {
-          uuid: regeneratedData.uuid,
-          inputText: regeneratedData.prompt,
-          response: regeneratedData.gptResponse,
-          audioBlob: newAudioBlob,
-          imageUrl: regeneratedData.imageUrl,
-        },
+        state: updatedData,
         replace: true, // 현재 페이지를 대체
       });
     } catch (error) {
@@ -343,17 +458,34 @@ const ResultPage: React.FC = () => {
           </div>
         )}
 
-        <div className="flex gap-4 mt-2 absolute -top-10 right-12 border-2 border-white">
+        <div className="flex gap-1.5 mt-2 absolute -top-10 right-12 border-2 border-white">
           {/* 음성 재생/일시정지 버튼 */}
           <button
             onClick={handlePlayPause}
-            className="text-white transition-all hover:scale-110 active:scale-95"
+            disabled={isGeneratingVoice}
+            className={`text-white transition-all hover:scale-110 active:scale-95 ${
+              isGeneratingVoice ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            {isPlaying && !isPaused ? (
+            {isGeneratingVoice ? (
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : isPlaying && !isPaused ? (
               <IoPause size={25} />
             ) : (
               <IoPlay size={25} />
             )}
+          </button>
+
+          {/* 음성 성별 토글 버튼 */}
+          <button
+            onClick={handleVoiceGenderToggle}
+            className={`px-2 py-1 text-sm font-[DungGeunMo] rounded transition-all hover:scale-110 active:scale-95 ${
+              voiceGender === "male"
+                ? "bg-blue-600 text-white"
+                : "bg-pink-600 text-white"
+            }`}
+          >
+            {voiceGender === "male" ? "남" : "여"}
           </button>
         </div>
 
