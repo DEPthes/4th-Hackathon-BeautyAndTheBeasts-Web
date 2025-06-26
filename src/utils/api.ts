@@ -9,7 +9,7 @@ export interface GeminiResponse {
 
 // API 베이스 URL 설정
 const API_BASE_URL = import.meta.env.PROD
-  ? "https://paykids.shop" // 프로덕션 환경
+  ? "/.netlify/functions/api-proxy" // 프로덕션 환경 (Netlify Functions 프록시 사용)
   : ""; // 개발 환경 (프록시 사용)
 
 // Gemini API 호출 함수 (실제 API 사용)
