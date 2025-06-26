@@ -270,7 +270,13 @@ export async function getResultByUuid(uuid: string): Promise<GeminiResponse> {
       console.log("🔍 UUID로 결과 데이터 가져오기 중...", uuid);
     }
 
-    const apiUrl = `${API_BASE_URL}/api/gemini/${uuid}`;
+    // 배포 환경에서는 전용 Netlify Function 사용, 개발 환경에서는 기존 프록시 사용
+    const apiUrl = import.meta.env.PROD
+      ? `/.netlify/functions/get-gemini/${uuid}`
+      : `${API_BASE_URL}/api/gemini/${uuid}`;
+
+    console.log("🌐 UUID 조회 URL:", apiUrl);
+
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -279,6 +285,13 @@ export async function getResultByUuid(uuid: string): Promise<GeminiResponse> {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "❌ UUID 조회 실패:",
+        response.status,
+        response.statusText,
+        errorText
+      );
       throw new Error(
         `결과 데이터 요청 실패: ${response.status} ${response.statusText}`
       );
